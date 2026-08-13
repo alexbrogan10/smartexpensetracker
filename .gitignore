@@ -1,0 +1,27 @@
+# --- Environment ---
+.env
+.env.local
+
+# --- Python / backend ---
+backend/.venv/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# --- Node / frontend ---
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+
+# --- ML artifacts (trained models, not committed) ---
+backend/app/ml/artifacts/
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store

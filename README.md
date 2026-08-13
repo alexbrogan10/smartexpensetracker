@@ -40,6 +40,11 @@ cd backend
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+
+# Make sure PostgreSQL is running and DATABASE_URL (see .env.example) points at it,
+# then apply migrations:
+alembic upgrade head
+
 uvicorn app.main:app --reload
 ```
 

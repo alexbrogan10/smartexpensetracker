@@ -15,3 +15,10 @@ export function formatDate(isoDate: string): string {
     day: 'numeric',
   })
 }
+
+export function formatMonthYear(month: number, year: number): string {
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+  })
+}

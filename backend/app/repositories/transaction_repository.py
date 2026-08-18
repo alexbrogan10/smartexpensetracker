@@ -1,3 +1,4 @@
+import calendar
 import uuid
 from dataclasses import dataclass
 from datetime import date
@@ -94,3 +95,43 @@ def get_transaction_for_user(
         .where(Transaction.id == transaction_id, Transaction.user_id == user_id)
     )
     return db.scalar(stmt)
+
+
+def _month_date_range(year: int, month: int) -> tuple[date, date]:
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, 1), date(year, month, last_day)
+
+
+def get_expense_totals_by_category(
+    db: Session, user_id: uuid.UUID, year: int, month: int
+) -> dict[uuid.UUID, Decimal]:
+    """Sum of expense transactions per category for one calendar month.
+
+    Used by budget progress calculations; reused as-is by month-over-month
+    analytics once that milestone lands, so it lives here rather than in a
+    budget-specific module.
+    """
+    date_from, date_to = _month_date_range(year, month)
+    stmt = (
+        select(Transaction.category_id, func.sum(Transaction.amount))
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.transaction_date >= date_from,
+            Transaction.transaction_date <= date_to,
+        )
+        .group_by(Transaction.category_id)
+    )
+    return dict(db.execute(stmt).all())
+
+
+def get_total_expenses(db: Session, user_id: uuid.UUID, year: int, month: int) -> Decimal:
+    date_from, date_to = _month_date_range(year, month)
+    stmt = select(func.sum(Transaction.amount)).where(
+        Transaction.user_id == user_id,
+        Transaction.type == TransactionType.EXPENSE,
+        Transaction.transaction_date >= date_from,
+        Transaction.transaction_date <= date_to,
+    )
+    total = db.scalar(stmt)
+    return total if total is not None else Decimal("0")

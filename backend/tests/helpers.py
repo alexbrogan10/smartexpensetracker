@@ -7,3 +7,8 @@ def register_and_login(
     response = client.post("/auth/login", data={"username": email, "password": password})
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def get_category_id(client, headers, type_: str) -> str:
+    categories = client.get("/categories", params={"type": type_}, headers=headers).json()
+    return categories[0]["id"]

@@ -26,6 +26,12 @@ export default function AppLayout() {
           <Button component={RouterLink} to="/transactions" color="inherit">
             Transactions
           </Button>
+          <Button component={RouterLink} to="/budgets" color="inherit">
+            Budgets
+          </Button>
+          <Button component={RouterLink} to="/savings-goals" color="inherit">
+            Savings
+          </Button>
           <Button component={RouterLink} to="/profile" color="inherit">
             {user?.full_name}
           </Button>

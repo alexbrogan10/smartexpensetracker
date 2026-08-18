@@ -1,9 +1,4 @@
-from tests.helpers import register_and_login
-
-
-def get_category_id(client, headers, type_: str) -> str:
-    categories = client.get("/categories", params={"type": type_}, headers=headers).json()
-    return categories[0]["id"]
+from tests.helpers import get_category_id, register_and_login
 
 
 def create_transaction(client, headers, category_id, **overrides):

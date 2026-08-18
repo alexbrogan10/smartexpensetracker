@@ -8,6 +8,8 @@ import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
+import TransactionFormPage from './pages/TransactionFormPage'
+import TransactionsPage from './pages/TransactionsPage'
 import { theme } from './theme'
 
 function App() {
@@ -22,6 +24,9 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<DashboardPage />} />
+                <Route path="/transactions" element={<TransactionsPage />} />
+                <Route path="/transactions/new" element={<TransactionFormPage />} />
+                <Route path="/transactions/:id/edit" element={<TransactionFormPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>

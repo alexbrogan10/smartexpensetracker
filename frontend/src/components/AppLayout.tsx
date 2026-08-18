@@ -23,6 +23,9 @@ export default function AppLayout() {
           >
             Smart Expense Tracker
           </Typography>
+          <Button component={RouterLink} to="/transactions" color="inherit">
+            Transactions
+          </Button>
           <Button component={RouterLink} to="/profile" color="inherit">
             {user?.full_name}
           </Button>

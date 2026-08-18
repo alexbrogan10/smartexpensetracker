@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.db.seed import seed_default_categories
 from app.db.session import get_db
 from app.main import app
 from app.models import Base
@@ -54,3 +55,10 @@ def client(db_session):
         yield TestClient(app)
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def seeded_client(client, db_session):
+    """A `client` whose database already has the system default categories."""
+    seed_default_categories(db_session)
+    return client

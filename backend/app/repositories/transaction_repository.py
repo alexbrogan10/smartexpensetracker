@@ -200,3 +200,42 @@ def get_recurring_transactions(db: Session, user_id: uuid.UUID) -> list[Transact
         .order_by(Transaction.transaction_date.desc())
     )
     return list(db.scalars(stmt).unique().all())
+
+
+def transaction_exists(
+    db: Session, user_id: uuid.UUID, transaction_date: date, payee: str, amount: Decimal
+) -> bool:
+    """Whether a transaction with this date/payee/amount already exists.
+
+    Used for import duplicate detection: date + amount + case-insensitive
+    payee is a reasonable heuristic, not a guarantee (it can't distinguish
+    two genuinely separate purchases of the same amount, from the same
+    merchant, on the same day).
+    """
+    stmt = (
+        select(Transaction.id)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date == transaction_date,
+            Transaction.amount == amount,
+            func.lower(Transaction.payee) == payee.lower(),
+        )
+        .limit(1)
+    )
+    return db.scalar(stmt) is not None
+
+
+MAX_EXPORT_ROWS = 10_000
+
+
+def list_transactions_for_export(
+    db: Session, user_id: uuid.UUID, filters: TransactionFilters
+) -> list[Transaction]:
+    """All transactions matching `filters`, unpaginated (capped at MAX_EXPORT_ROWS)."""
+    stmt = (
+        _apply_filters(select(Transaction), user_id, filters)
+        .options(joinedload(Transaction.category))
+        .order_by(Transaction.transaction_date.desc(), Transaction.id)
+        .limit(MAX_EXPORT_ROWS)
+    )
+    return list(db.scalars(stmt).unique().all())

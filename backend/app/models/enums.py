@@ -25,3 +25,9 @@ class RecurringFrequency(StrEnum):
 class CategoryType(StrEnum):
     INCOME = "income"
     EXPENSE = "expense"
+
+
+class ImportStatus(StrEnum):
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"

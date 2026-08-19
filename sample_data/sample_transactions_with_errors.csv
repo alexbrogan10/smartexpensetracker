@@ -1,0 +1,13 @@
+date,type,category,payee,amount,description,payment_method,is_recurring,recurring_frequency
+2026-08-01,expense,Groceries,Whole Foods,54.20,Valid row for comparison,debit_card,false,
+,expense,Groceries,Corner Store,12.00,Missing date,cash,false,
+2026/08/03,expense,Groceries,Corner Store,12.00,Date in an unsupported format,cash,false,
+2026-08-04,expense,Groceries,Corner Store,,Missing amount,cash,false,
+2026-08-05,expense,Groceries,Corner Store,-15.00,Negative amount,cash,false,
+2026-08-06,expense,Groceries,Corner Store,twelve dollars,Non-numeric amount,cash,false,
+2026-08-07,expense,Spaceships,Corner Store,20.00,Category that does not exist,cash,false,
+2026-08-08,transfer,Groceries,Corner Store,20.00,Invalid type value,cash,false,
+2026-08-09,expense,Groceries,,20.00,Missing payee,cash,false,
+2026-08-10,expense,Subscriptions,Netflix,15.49,First occurrence,credit_card,true,monthly
+2026-08-10,expense,Subscriptions,Netflix,15.49,Duplicate of the row above,credit_card,true,monthly
+2026-08-11,income,Salary,Acme Corporation,4200.00,Valid income row for comparison,,true,monthly

@@ -1,0 +1,52 @@
+date,type,category,payee,amount,description,payment_method,is_recurring,recurring_frequency
+2026-06-01,income,Salary,Acme Corporation,4200.00,Monthly paycheck,,true,monthly
+2026-06-01,expense,Housing,Sunset Apartments,1450.00,Rent,bank_transfer,true,monthly
+2026-06-02,expense,Subscriptions,Netflix,15.49,,credit_card,true,monthly
+2026-06-02,expense,Subscriptions,Spotify,10.99,,credit_card,true,monthly
+2026-06-03,expense,Groceries,Whole Foods,86.24,Weekly groceries,debit_card,false,
+2026-06-04,expense,Transportation,Shell Gas Station,42.10,,credit_card,false,
+2026-06-05,expense,Utilities,City Power & Light,110.35,Electric bill,bank_transfer,true,monthly
+2026-06-06,expense,Restaurants,Corner Bistro,54.20,Dinner with friends,credit_card,false,
+2026-06-07,expense,Entertainment,AMC Theatres,28.00,Movie night,credit_card,false,
+2026-06-08,income,Freelance,Design Client LLC,650.00,Logo design project,,false,
+2026-06-10,expense,Groceries,Trader Joe's,63.78,,debit_card,false,
+2026-06-11,expense,Healthcare,City Pharmacy,24.99,,cash,false,
+2026-06-12,expense,Shopping,Target,71.44,Household items,credit_card,false,
+2026-06-14,expense,Transportation,Metro Transit,60.00,Monthly transit pass,debit_card,true,monthly
+2026-06-15,expense,Restaurants,Blue Bottle Coffee,6.75,,cash,false,
+2026-06-18,expense,Groceries,Whole Foods,91.02,,debit_card,false,
+2026-06-20,expense,Entertainment,Steam,19.99,Video game,credit_card,false,
+2026-06-22,expense,Debt,Student Loan Servicer,225.00,Monthly payment,bank_transfer,true,monthly
+2026-06-25,expense,Insurance,SafeGuard Insurance,140.00,Auto + renters bundle,bank_transfer,true,monthly
+2026-06-28,expense,Shopping,Amazon,54.33,,credit_card,false,
+2026-07-01,income,Salary,Acme Corporation,4200.00,Monthly paycheck,,true,monthly
+2026-07-01,expense,Housing,Sunset Apartments,1450.00,Rent,bank_transfer,true,monthly
+2026-07-02,expense,Subscriptions,Netflix,15.49,,credit_card,true,monthly
+2026-07-02,expense,Subscriptions,Spotify,10.99,,credit_card,true,monthly
+2026-07-03,expense,Groceries,Whole Foods,78.60,,debit_card,false,
+2026-07-05,expense,Utilities,City Power & Light,132.80,Electric bill (AC season),bank_transfer,true,monthly
+2026-07-06,expense,Restaurants,Corner Bistro,48.10,,credit_card,false,
+2026-07-08,income,Freelance,Design Client LLC,900.00,Website redesign,,false,
+2026-07-09,expense,Travel,Delta Airlines,320.00,Flight for weekend trip,credit_card,false,
+2026-07-09,expense,Travel,Riverside Hotel,210.00,2 nights,credit_card,false,
+2026-07-12,expense,Groceries,Trader Joe's,58.15,,debit_card,false,
+2026-07-14,expense,Transportation,Metro Transit,60.00,Monthly transit pass,debit_card,true,monthly
+2026-07-16,expense,Entertainment,AMC Theatres,32.00,,credit_card,false,
+2026-07-19,expense,Shopping,Target,45.20,,credit_card,false,
+2026-07-22,expense,Debt,Student Loan Servicer,225.00,Monthly payment,bank_transfer,true,monthly
+2026-07-25,expense,Insurance,SafeGuard Insurance,140.00,Auto + renters bundle,bank_transfer,true,monthly
+2026-07-27,expense,Healthcare,Downtown Dental,180.00,Cleaning,debit_card,false,
+2026-07-29,income,Gifts,Family,100.00,Birthday gift,,false,
+2026-08-01,income,Salary,Acme Corporation,4200.00,Monthly paycheck,,true,monthly
+2026-08-01,expense,Housing,Sunset Apartments,1450.00,Rent,bank_transfer,true,monthly
+2026-08-02,expense,Subscriptions,Netflix,15.49,,credit_card,true,monthly
+2026-08-02,expense,Subscriptions,Spotify,10.99,,credit_card,true,monthly
+2026-08-03,expense,Groceries,Whole Foods,95.11,,debit_card,false,
+2026-08-04,expense,Restaurants,Taco Stand,18.40,,cash,false,
+2026-08-05,expense,Utilities,City Power & Light,118.60,Electric bill,bank_transfer,true,monthly
+2026-08-06,expense,Entertainment,Spotify Concert Tickets,85.00,Concert,credit_card,false,
+2026-08-08,expense,Groceries,Trader Joe's,66.90,,debit_card,false,
+2026-08-10,expense,Shopping,Amazon,32.75,,credit_card,false,
+2026-08-12,expense,Transportation,Metro Transit,60.00,Monthly transit pass,debit_card,true,monthly
+2026-08-14,expense,Debt,Student Loan Servicer,225.00,Monthly payment,bank_transfer,true,monthly
+2026-08-15,income,Investment Income,Brokerage Dividend,42.18,Quarterly dividend,,false,

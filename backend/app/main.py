@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.budgets import router as budgets_router
 from app.api.categories import router as categories_router
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
     app.include_router(transactions_router)
     app.include_router(budgets_router)
     app.include_router(savings_goals_router)
+    app.include_router(analytics_router)
 
     return app
 

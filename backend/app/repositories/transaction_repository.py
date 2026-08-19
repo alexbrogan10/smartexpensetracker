@@ -8,6 +8,7 @@ from typing import Literal
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
+from app.models.category import Category
 from app.models.enums import PaymentMethod, TransactionType
 from app.models.transaction import Transaction
 
@@ -97,7 +98,7 @@ def get_transaction_for_user(
     return db.scalar(stmt)
 
 
-def _month_date_range(year: int, month: int) -> tuple[date, date]:
+def month_date_range(year: int, month: int) -> tuple[date, date]:
     last_day = calendar.monthrange(year, month)[1]
     return date(year, month, 1), date(year, month, last_day)
 
@@ -111,7 +112,7 @@ def get_expense_totals_by_category(
     analytics once that milestone lands, so it lives here rather than in a
     budget-specific module.
     """
-    date_from, date_to = _month_date_range(year, month)
+    date_from, date_to = month_date_range(year, month)
     stmt = (
         select(Transaction.category_id, func.sum(Transaction.amount))
         .where(
@@ -125,13 +126,77 @@ def get_expense_totals_by_category(
     return dict(db.execute(stmt).all())
 
 
-def get_total_expenses(db: Session, user_id: uuid.UUID, year: int, month: int) -> Decimal:
-    date_from, date_to = _month_date_range(year, month)
+def _get_total_by_type(
+    db: Session, user_id: uuid.UUID, year: int, month: int, type_: TransactionType
+) -> Decimal:
+    date_from, date_to = month_date_range(year, month)
     stmt = select(func.sum(Transaction.amount)).where(
         Transaction.user_id == user_id,
-        Transaction.type == TransactionType.EXPENSE,
+        Transaction.type == type_,
         Transaction.transaction_date >= date_from,
         Transaction.transaction_date <= date_to,
     )
     total = db.scalar(stmt)
     return total if total is not None else Decimal("0")
+
+
+def get_total_expenses(db: Session, user_id: uuid.UUID, year: int, month: int) -> Decimal:
+    return _get_total_by_type(db, user_id, year, month, TransactionType.EXPENSE)
+
+
+def get_total_income(db: Session, user_id: uuid.UUID, year: int, month: int) -> Decimal:
+    return _get_total_by_type(db, user_id, year, month, TransactionType.INCOME)
+
+
+def get_category_breakdown(
+    db: Session, user_id: uuid.UUID, year: int, month: int, type_: TransactionType
+) -> list[tuple[Category, Decimal, int]]:
+    """Per-category totals (with transaction count) for one calendar month."""
+    date_from, date_to = month_date_range(year, month)
+    stmt = (
+        select(Category, func.sum(Transaction.amount), func.count(Transaction.id))
+        .join(Transaction, Transaction.category_id == Category.id)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.type == type_,
+            Transaction.transaction_date >= date_from,
+            Transaction.transaction_date <= date_to,
+        )
+        .group_by(Category.id)
+        .order_by(func.sum(Transaction.amount).desc())
+    )
+    return list(db.execute(stmt).all())
+
+
+def get_top_merchants(
+    db: Session, user_id: uuid.UUID, date_from: date, date_to: date, limit: int
+) -> list[tuple[str, Decimal, int]]:
+    """Top expense payees by total spend within a date range."""
+    stmt = (
+        select(Transaction.payee, func.sum(Transaction.amount), func.count(Transaction.id))
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.transaction_date >= date_from,
+            Transaction.transaction_date <= date_to,
+        )
+        .group_by(Transaction.payee)
+        .order_by(func.sum(Transaction.amount).desc())
+        .limit(limit)
+    )
+    return list(db.execute(stmt).all())
+
+
+def get_recurring_transactions(db: Session, user_id: uuid.UUID) -> list[Transaction]:
+    """All transactions flagged recurring, most recent first.
+
+    Callers group these by payee to find each series' most recent
+    occurrence, since there's no dedicated recurring-series table yet.
+    """
+    stmt = (
+        select(Transaction)
+        .options(joinedload(Transaction.category))
+        .where(Transaction.user_id == user_id, Transaction.is_recurring.is_(True))
+        .order_by(Transaction.transaction_date.desc())
+    )
+    return list(db.scalars(stmt).unique().all())

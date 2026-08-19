@@ -16,9 +16,13 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import * as categoriesApi from '../api/categories'
+import * as categorizationApi from '../api/categorization'
 import * as transactionsApi from '../api/transactions'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { Category, CategoryType } from '../types/category'
+import type { CategorySuggestion } from '../types/categorization'
 import type { PaymentMethod, RecurringFrequency } from '../types/transaction'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
@@ -59,12 +63,38 @@ export default function TransactionFormPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [suggestion, setSuggestion] = useState<CategorySuggestion | null>(null)
+  const debouncedPayee = useDebouncedValue(payee, 500)
+  const debouncedDescription = useDebouncedValue(description, 500)
+
   useEffect(() => {
     categoriesApi
       .listCategories()
       .then(setCategories)
       .catch(() => setCategories([]))
   }, [])
+
+  useEffect(() => {
+    if (!debouncedPayee.trim()) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect -- clearing a stale
+         suggestion when the payee is emptied is a synchronous reset, not fetched state. */
+      setSuggestion(null)
+      return
+    }
+    let cancelled = false
+    categorizationApi
+      .suggestCategory({ type, payee: debouncedPayee, description: debouncedDescription || null })
+      .then((response) => {
+        if (cancelled) return
+        setSuggestion(response.status === 'ok' ? (response.suggestions[0] ?? null) : null)
+      })
+      .catch(() => {
+        if (!cancelled) setSuggestion(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [type, debouncedPayee, debouncedDescription])
 
   useEffect(() => {
     if (!id) return
@@ -90,6 +120,7 @@ export default function TransactionFormPage() {
   const handleTypeChange = (newType: CategoryType) => {
     setType(newType)
     setCategoryId('')
+    setSuggestion(null)
     if (newType === 'income') {
       setPaymentMethod('')
     }
@@ -171,6 +202,21 @@ export default function TransactionFormPage() {
                 </MenuItem>
               ))}
             </TextField>
+
+            {suggestion && suggestion.category_id !== categoryId && (
+              <Alert
+                severity="info"
+                icon={<AutoAwesomeIcon fontSize="inherit" />}
+                action={
+                  <Button size="small" onClick={() => setCategoryId(suggestion.category_id)}>
+                    Use
+                  </Button>
+                }
+              >
+                Suggested category: {suggestion.category_name} (
+                {Math.round(suggestion.confidence * 100)}% confidence)
+              </Alert>
+            )}
 
             <TextField
               label="Amount"

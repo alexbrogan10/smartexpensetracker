@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './features/auth/AuthContext'
+import { NotificationsProvider } from './features/notifications/NotificationsContext'
 import AnalyticsPage from './pages/AnalyticsPage'
 import BudgetsPage from './pages/BudgetsPage'
 import DashboardPage from './pages/DashboardPage'
@@ -10,6 +11,7 @@ import ImportPage from './pages/ImportPage'
 import InsightsPage from './pages/InsightsPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
+import NotificationsPage from './pages/NotificationsPage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
 import ReportsPage from './pages/ReportsPage'
@@ -28,7 +30,13 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route element={<ProtectedRoute />}>
-              <Route element={<AppLayout />}>
+              <Route
+                element={
+                  <NotificationsProvider>
+                    <AppLayout />
+                  </NotificationsProvider>
+                }
+              >
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/budgets" element={<BudgetsPage />} />
@@ -39,6 +47,7 @@ function App() {
                 <Route path="/transactions/import" element={<ImportPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>

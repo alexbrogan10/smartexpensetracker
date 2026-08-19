@@ -8,6 +8,7 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 if TYPE_CHECKING:
     from app.models.budget import Budget
     from app.models.category import Category
+    from app.models.notification import Notification
     from app.models.savings_goal import SavingsGoal
     from app.models.transaction import Transaction
     from app.models.transaction_import import TransactionImport
@@ -34,5 +35,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     transaction_imports: Mapped[list["TransactionImport"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

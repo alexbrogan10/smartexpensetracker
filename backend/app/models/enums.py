@@ -31,3 +31,7 @@ class ImportStatus(StrEnum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
+
+
+class NotificationType(StrEnum):
+    UNUSUAL_SPENDING = "unusual_spending"

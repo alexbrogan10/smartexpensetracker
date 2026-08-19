@@ -228,6 +228,18 @@ def transaction_exists(
 MAX_EXPORT_ROWS = 10_000
 
 
+def get_category_amounts(db: Session, user_id: uuid.UUID, category_id: uuid.UUID) -> list[Decimal]:
+    """All historical transaction amounts for one user's category.
+
+    Training data for unusual-spending detection: the distribution a new
+    transaction's amount gets compared against.
+    """
+    stmt = select(Transaction.amount).where(
+        Transaction.user_id == user_id, Transaction.category_id == category_id
+    )
+    return list(db.scalars(stmt).all())
+
+
 def list_categorized_texts(
     db: Session, user_id: uuid.UUID, type_: TransactionType
 ) -> list[tuple[str, str | None, uuid.UUID]]:

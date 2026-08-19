@@ -16,6 +16,16 @@ export function formatDate(isoDate: string): string {
   })
 }
 
+export function formatDateTime(isoDateTime: string): string {
+  return new Date(isoDateTime).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 export function formatMonthYear(month: number, year: number): string {
   return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
     year: 'numeric',

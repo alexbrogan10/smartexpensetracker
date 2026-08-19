@@ -2,13 +2,17 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.ml.anomaly import detect_unusual_amount
+from app.models.enums import TransactionType
 from app.models.transaction import Transaction
 from app.repositories.transaction_repository import (
     TransactionFilters,
+    get_category_amounts,
     get_transaction_for_user,
     list_transactions,
 )
 from app.schemas.transaction import TransactionCreate, TransactionUpdate
+from app.services import notification_service
 from app.services.category_service import CategoryNotFoundError, get_category_for_user
 
 
@@ -53,6 +57,11 @@ def get_transaction(db: Session, user_id: uuid.UUID, transaction_id: uuid.UUID) 
 def create_transaction(db: Session, user_id: uuid.UUID, data: TransactionCreate) -> Transaction:
     _validate_category(db, user_id, data.category_id, data.type)
 
+    is_unusual = False
+    if data.type == TransactionType.EXPENSE:
+        history = get_category_amounts(db, user_id, data.category_id)
+        is_unusual = detect_unusual_amount(data.amount, history)
+
     transaction = Transaction(
         user_id=user_id,
         type=data.type,
@@ -66,6 +75,16 @@ def create_transaction(db: Session, user_id: uuid.UUID, data: TransactionCreate)
         recurring_frequency=data.recurring_frequency,
     )
     db.add(transaction)
+    db.flush()
+
+    if is_unusual:
+        category = get_category_for_user(db, user_id, data.category_id)
+        db.add(
+            notification_service.build_unusual_spending_notification(
+                user_id, category.name, transaction.payee, transaction.amount, transaction.id
+            )
+        )
+
     db.commit()
     db.refresh(transaction)
     return transaction

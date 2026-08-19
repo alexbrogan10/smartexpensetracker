@@ -1,9 +1,12 @@
-import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material'
+import { AppBar, Badge, Box, Button, IconButton, Toolbar, Typography } from '@mui/material'
+import NotificationsIcon from '@mui/icons-material/Notifications'
 import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useNotifications } from '../hooks/useNotifications'
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
+  const { unreadCount } = useNotifications()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -41,6 +44,16 @@ export default function AppLayout() {
           <Button component={RouterLink} to="/insights" color="inherit">
             Insights
           </Button>
+          <IconButton
+            component={RouterLink}
+            to="/notifications"
+            color="inherit"
+            aria-label="notifications"
+          >
+            <Badge badgeContent={unreadCount} color="error">
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
           <Button component={RouterLink} to="/profile" color="inherit">
             {user?.full_name}
           </Button>

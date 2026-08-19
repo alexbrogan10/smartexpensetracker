@@ -8,6 +8,7 @@ from app.api.categories import router as categories_router
 from app.api.categorization import router as categorization_router
 from app.api.health import router as health_router
 from app.api.imports import router as imports_router
+from app.api.notifications import router as notifications_router
 from app.api.predictions import router as predictions_router
 from app.api.recommendations import router as recommendations_router
 from app.api.reports import router as reports_router
@@ -43,6 +44,7 @@ def create_app() -> FastAPI:
     app.include_router(reports_router)
     app.include_router(predictions_router)
     app.include_router(recommendations_router)
+    app.include_router(notifications_router)
 
     return app
 

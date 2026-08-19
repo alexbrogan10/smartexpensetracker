@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 
+from app.ml.anomaly import detect_unusual_amount
 from app.models.category import Category
 from app.models.enums import (
     CategoryType,
@@ -14,13 +15,13 @@ from app.models.enums import (
 )
 from app.models.transaction import Transaction
 from app.models.transaction_import import TransactionImport
-from app.repositories.transaction_repository import transaction_exists
+from app.repositories.transaction_repository import get_category_amounts, transaction_exists
 from app.schemas.transaction_import import (
     ImportConfirmResult,
     ImportRowPreview,
     ParsedTransactionFields,
 )
-from app.services import category_service
+from app.services import category_service, notification_service
 from app.services.import_parsers.base import MissingColumnsError, ParsedRow
 from app.services.import_parsers.csv_parser import CsvTransactionParser
 
@@ -224,6 +225,12 @@ def confirm_import(
 
     statuses_to_import = {"valid"} | ({"duplicate"} if include_duplicates else set())
 
+    # Snapshot each category's pre-import history once, up front: every row
+    # is compared against spending *before* this batch, not against amounts
+    # from earlier in the same file.
+    category_history: dict[uuid.UUID, list[Decimal]] = {}
+    unusual_candidates: list[tuple[Transaction, str]] = []
+
     imported = 0
     skipped = 0
     for row in record.rows:
@@ -237,11 +244,14 @@ def confirm_import(
             skipped += 1
             continue
 
+        transaction_type = TransactionType(fields["type"])
+        amount = Decimal(fields["amount"])
+
         transaction = Transaction(
             user_id=user_id,
-            type=TransactionType(fields["type"]),
+            type=transaction_type,
             category_id=category.id,
-            amount=Decimal(fields["amount"]),
+            amount=amount,
             payee=fields["payee"],
             description=fields["description"],
             transaction_date=date.fromisoformat(fields["transaction_date"]),
@@ -255,6 +265,20 @@ def confirm_import(
         )
         db.add(transaction)
         imported += 1
+
+        if transaction_type == TransactionType.EXPENSE:
+            if category.id not in category_history:
+                category_history[category.id] = get_category_amounts(db, user_id, category.id)
+            if detect_unusual_amount(amount, category_history[category.id]):
+                unusual_candidates.append((transaction, category.name))
+
+    db.flush()  # assigns ids to the new transactions before notifications reference them
+    for transaction, category_name in unusual_candidates:
+        db.add(
+            notification_service.build_unusual_spending_notification(
+                user_id, category_name, transaction.payee, transaction.amount, transaction.id
+            )
+        )
 
     record.status = ImportStatus.CONFIRMED
     db.commit()

@@ -7,6 +7,7 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import BudgetsPage from './pages/BudgetsPage'
 import DashboardPage from './pages/DashboardPage'
 import ImportPage from './pages/ImportPage'
+import InsightsPage from './pages/InsightsPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
@@ -37,6 +38,7 @@ function App() {
                 <Route path="/transactions/:id/edit" element={<TransactionFormPage />} />
                 <Route path="/transactions/import" element={<ImportPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/insights" element={<InsightsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>

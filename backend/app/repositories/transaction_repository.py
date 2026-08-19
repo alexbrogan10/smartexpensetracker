@@ -228,6 +228,20 @@ def transaction_exists(
 MAX_EXPORT_ROWS = 10_000
 
 
+def list_categorized_texts(
+    db: Session, user_id: uuid.UUID, type_: TransactionType
+) -> list[tuple[str, str | None, uuid.UUID]]:
+    """(payee, description, category_id) for all of a user's transactions of one type.
+
+    Training data for per-user category suggestion — every existing
+    transaction is already a confirmed (text -> category) example.
+    """
+    stmt = select(Transaction.payee, Transaction.description, Transaction.category_id).where(
+        Transaction.user_id == user_id, Transaction.type == type_
+    )
+    return list(db.execute(stmt).all())
+
+
 def list_transactions_for_export(
     db: Session, user_id: uuid.UUID, filters: TransactionFilters
 ) -> list[Transaction]:

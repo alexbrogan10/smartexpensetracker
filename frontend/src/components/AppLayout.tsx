@@ -38,6 +38,9 @@ export default function AppLayout() {
           <Button component={RouterLink} to="/reports" color="inherit">
             Reports
           </Button>
+          <Button component={RouterLink} to="/insights" color="inherit">
+            Insights
+          </Button>
           <Button component={RouterLink} to="/profile" color="inherit">
             {user?.full_name}
           </Button>

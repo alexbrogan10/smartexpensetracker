@@ -6,10 +6,12 @@ import { AuthProvider } from './features/auth/AuthContext'
 import AnalyticsPage from './pages/AnalyticsPage'
 import BudgetsPage from './pages/BudgetsPage'
 import DashboardPage from './pages/DashboardPage'
+import ImportPage from './pages/ImportPage'
 import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
+import ReportsPage from './pages/ReportsPage'
 import SavingsGoalsPage from './pages/SavingsGoalsPage'
 import TransactionFormPage from './pages/TransactionFormPage'
 import TransactionsPage from './pages/TransactionsPage'
@@ -33,6 +35,8 @@ function App() {
                 <Route path="/transactions" element={<TransactionsPage />} />
                 <Route path="/transactions/new" element={<TransactionFormPage />} />
                 <Route path="/transactions/:id/edit" element={<TransactionFormPage />} />
+                <Route path="/transactions/import" element={<ImportPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>

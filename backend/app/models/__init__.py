@@ -3,6 +3,7 @@ from app.models.budget import Budget, BudgetCategory
 from app.models.category import Category
 from app.models.savings_goal import SavingsGoal
 from app.models.transaction import Transaction
+from app.models.transaction_import import TransactionImport
 from app.models.user import User
 
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "Category",
     "SavingsGoal",
     "Transaction",
+    "TransactionImport",
     "User",
 ]

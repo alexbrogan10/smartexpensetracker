@@ -146,9 +146,14 @@ export default function TransactionsPage() {
     <Box sx={{ p: 4 }}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">Transactions</Typography>
-        <Button component={RouterLink} to="/transactions/new" variant="contained">
-          Add transaction
-        </Button>
+        <Stack direction="row" sx={{ gap: 1 }}>
+          <Button component={RouterLink} to="/transactions/import">
+            Import CSV
+          </Button>
+          <Button component={RouterLink} to="/transactions/new" variant="contained">
+            Add transaction
+          </Button>
+        </Stack>
       </Stack>
 
       <Paper sx={{ p: 2, mb: 3 }}>

@@ -16,6 +16,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import * as budgetsApi from '../api/budgets'
 import BudgetFormDialog from '../components/BudgetFormDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { useToast } from '../hooks/useToast'
 import type { Budget, BudgetCategoryInput, BudgetStatus } from '../types/budget'
 import { formatCurrency, formatMonthYear } from '../utils/format'
 
@@ -26,6 +27,7 @@ function statusColor(status: BudgetStatus): 'success' | 'warning' | 'error' {
 }
 
 export default function BudgetsPage() {
+  const { showSuccess, showError } = useToast()
   const today = new Date()
   const [month, setMonth] = useState(today.getMonth() + 1)
   const [year, setYear] = useState(today.getFullYear())
@@ -83,6 +85,7 @@ export default function BudgetsPage() {
         overall_amount: overallAmount,
         category_limits: categoryLimits,
       })
+      showSuccess('Budget updated.')
     } else {
       await budgetsApi.createBudget({
         month,
@@ -90,6 +93,7 @@ export default function BudgetsPage() {
         overall_amount: overallAmount,
         category_limits: categoryLimits,
       })
+      showSuccess('Budget created.')
     }
     setIsFormOpen(false)
     load()
@@ -102,8 +106,9 @@ export default function BudgetsPage() {
       await budgetsApi.deleteBudget(budget.id)
       setIsDeleteOpen(false)
       load()
+      showSuccess('Budget deleted.')
     } catch {
-      setError('Could not delete this budget. Please try again.')
+      showError('Could not delete this budget. Please try again.')
     } finally {
       setIsDeleting(false)
     }

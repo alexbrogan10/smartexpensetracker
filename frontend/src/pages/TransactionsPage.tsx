@@ -27,6 +27,7 @@ import * as categoriesApi from '../api/categories'
 import * as transactionsApi from '../api/transactions'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { useToast } from '../hooks/useToast'
 import type { Category } from '../types/category'
 import type { Transaction } from '../types/transaction'
 import { formatCurrency, formatDate } from '../utils/format'
@@ -40,6 +41,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 }
 
 export default function TransactionsPage() {
+  const { showSuccess, showError } = useToast()
   const [categories, setCategories] = useState<Category[]>([])
 
   const [searchInput, setSearchInput] = useState('')
@@ -135,8 +137,9 @@ export default function TransactionsPage() {
       const response = await transactionsApi.listTransactions(filters)
       setTransactions(response.items)
       setTotal(response.total)
+      showSuccess('Transaction deleted.')
     } catch {
-      setError('Could not delete transaction. Please try again.')
+      showError('Could not delete transaction. Please try again.')
     } finally {
       setIsDeleting(false)
     }

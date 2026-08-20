@@ -102,12 +102,14 @@ def update_transaction(
     if "type" in updates or "category_id" in updates:
         _validate_category(db, user_id, new_category_id, new_type)
 
+    # Only the "disabling" direction needs a runtime check here: enabling
+    # recurring without a frequency in the same request is already rejected
+    # by TransactionUpdate's own validator, which doesn't need this record's
+    # existing state. But turning recurring off while leaving frequency
+    # unset in this request can still collide with a frequency already
+    # sitting on the row from before - only this service sees that.
     new_is_recurring = updates.get("is_recurring", transaction.is_recurring)
     new_recurring_frequency = updates.get("recurring_frequency", transaction.recurring_frequency)
-    if new_is_recurring and new_recurring_frequency is None:
-        raise InvalidRecurringStateError(
-            "recurring_frequency is required when is_recurring is true"
-        )
     if not new_is_recurring and new_recurring_frequency is not None:
         raise InvalidRecurringStateError(
             "recurring_frequency must be omitted when is_recurring is false"

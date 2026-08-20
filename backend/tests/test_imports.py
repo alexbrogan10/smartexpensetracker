@@ -100,6 +100,137 @@ def test_missing_payee_flagged_as_error(seeded_client):
     assert "payee is required" in row["errors"]
 
 
+def test_missing_field_values_flagged_as_errors(seeded_client):
+    headers = register_and_login(seeded_client)
+    csv_text = "date,type,category,payee,amount\n,,,,\n"
+
+    response = upload_csv(seeded_client, headers, csv_text)
+
+    row = response.json()["rows"][0]
+    assert row["status"] == "error"
+    assert "date is required" in row["errors"]
+    assert "type must be 'income' or 'expense'" in row["errors"]
+    assert "category is required" in row["errors"]
+    assert "payee is required" in row["errors"]
+    assert "amount is required" in row["errors"]
+
+
+def test_invalid_payment_method_flagged_as_error(seeded_client):
+    headers = register_and_login(seeded_client)
+    csv_text = (
+        "date,type,category,payee,amount,payment_method\n"
+        "2026-08-01,expense,Groceries,Store,10.00,bitcoin\n"
+    )
+
+    response = upload_csv(seeded_client, headers, csv_text)
+
+    row = response.json()["rows"][0]
+    assert row["status"] == "error"
+    assert any("unknown payment_method" in e for e in row["errors"])
+
+
+def test_recurring_with_invalid_frequency_flagged_as_error(seeded_client):
+    headers = register_and_login(seeded_client)
+    csv_text = (
+        "date,type,category,payee,amount,is_recurring,recurring_frequency\n"
+        "2026-08-01,expense,Groceries,Store,10.00,true,daily\n"
+    )
+
+    response = upload_csv(seeded_client, headers, csv_text)
+
+    row = response.json()["rows"][0]
+    assert row["status"] == "error"
+    assert any("recurring_frequency is missing or invalid" in e for e in row["errors"])
+
+
+def test_confirm_skips_row_whose_category_was_deleted_after_preview(seeded_client):
+    headers = register_and_login(seeded_client)
+    custom = seeded_client.post(
+        "/categories", json={"name": "Temp Category", "type": "expense"}, headers=headers
+    ).json()
+
+    csv_text = f"date,type,category,payee,amount\n2026-08-01,expense,{custom['name']},Store,10.00\n"
+    preview = upload_csv(seeded_client, headers, csv_text).json()
+    assert preview["valid_rows"] == 1
+
+    delete_response = seeded_client.delete(f"/categories/{custom['id']}", headers=headers)
+    assert delete_response.status_code == 204
+
+    confirm = seeded_client.post(
+        f"/imports/transactions/{preview['id']}/confirm",
+        json={"include_duplicates": False},
+        headers=headers,
+    )
+
+    assert confirm.status_code == 200
+    body = confirm.json()
+    assert body["imported_count"] == 0
+    assert body["skipped_count"] == 1
+
+
+def test_cancel_after_confirm_conflicts(seeded_client):
+    headers = register_and_login(seeded_client)
+    preview = upload_csv(seeded_client, headers, VALID_CSV).json()
+
+    seeded_client.post(
+        f"/imports/transactions/{preview['id']}/confirm",
+        json={"include_duplicates": False},
+        headers=headers,
+    )
+    cancel_response = seeded_client.delete(
+        f"/imports/transactions/{preview['id']}", headers=headers
+    )
+
+    assert cancel_response.status_code == 409
+
+
+def test_get_import_returns_preview_for_owner(seeded_client):
+    headers = register_and_login(seeded_client)
+    preview = upload_csv(seeded_client, headers, VALID_CSV).json()
+
+    response = seeded_client.get(f"/imports/transactions/{preview['id']}", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json()["id"] == preview["id"]
+
+
+def test_duplicate_rows_within_same_file_flagged(seeded_client):
+    headers = register_and_login(seeded_client)
+    csv_text = (
+        "date,type,category,payee,amount\n"
+        "2026-08-01,expense,Groceries,Whole Foods,42.50\n"
+        "2026-08-01,expense,Groceries,Whole Foods,42.50\n"
+    )
+
+    response = upload_csv(seeded_client, headers, csv_text)
+
+    body = response.json()
+    assert body["rows"][0]["status"] == "valid"
+    assert body["rows"][1]["status"] == "duplicate"
+    assert "duplicate of another row in this file" in body["rows"][1]["errors"]
+
+
+def test_non_utf8_file_rejected(seeded_client):
+    headers = register_and_login(seeded_client)
+
+    bad_bytes = b"date,type,category,payee,amount\n\xff\xfe"
+    response = seeded_client.post(
+        "/imports/transactions",
+        headers=headers,
+        files={"file": ("transactions.csv", bad_bytes, "text/csv")},
+    )
+
+    assert response.status_code == 422
+
+
+def test_empty_csv_rejected(seeded_client):
+    headers = register_and_login(seeded_client)
+
+    response = upload_csv(seeded_client, headers, "date,type,category,payee,amount\n")
+
+    assert response.status_code == 422
+
+
 def test_confirm_creates_transactions_and_skips_errors(seeded_client):
     headers = register_and_login(seeded_client)
     csv_text = VALID_CSV + "2026-08-03,expense,NotACategory,Store,10.00\n"

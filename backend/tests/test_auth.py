@@ -1,3 +1,7 @@
+from sqlalchemy import select
+
+from app.models.user import User
+
 REGISTER_PAYLOAD = {
     "email": "jane@example.com",
     "password": "supersecret123",
@@ -127,3 +131,29 @@ def test_change_password_rejects_wrong_current_password(client):
     )
 
     assert response.status_code == 400
+
+
+def test_deleted_user_rejected(client, db_session):
+    register(client)
+    headers = auth_headers(client)
+
+    user = db_session.scalar(select(User).where(User.email == REGISTER_PAYLOAD["email"]))
+    db_session.delete(user)
+    db_session.commit()
+
+    response = client.get("/users/me", headers=headers)
+
+    assert response.status_code == 401
+
+
+def test_inactive_user_rejected(client, db_session):
+    register(client)
+    headers = auth_headers(client)
+
+    user = db_session.scalar(select(User).where(User.email == REGISTER_PAYLOAD["email"]))
+    user.is_active = False
+    db_session.commit()
+
+    response = client.get("/users/me", headers=headers)
+
+    assert response.status_code == 403

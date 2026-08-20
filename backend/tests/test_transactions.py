@@ -183,6 +183,48 @@ def test_update_transaction_with_mismatched_category_fails(seeded_client):
     assert response.status_code == 422
 
 
+def test_update_transaction_with_nonexistent_category_fails(seeded_client):
+    headers = register_and_login(seeded_client)
+    category_id = get_category_id(seeded_client, headers, "expense")
+    created = create_transaction(seeded_client, headers, category_id).json()
+
+    response = seeded_client.put(
+        f"/transactions/{created['id']}",
+        json={"category_id": "00000000-0000-0000-0000-000000000000"},
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_transaction_enabling_recurring_without_frequency_fails(seeded_client):
+    headers = register_and_login(seeded_client)
+    category_id = get_category_id(seeded_client, headers, "expense")
+    created = create_transaction(seeded_client, headers, category_id).json()
+
+    response = seeded_client.put(
+        f"/transactions/{created['id']}", json={"is_recurring": True}, headers=headers
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_transaction_setting_frequency_without_recurring_fails(seeded_client):
+    headers = register_and_login(seeded_client)
+    category_id = get_category_id(seeded_client, headers, "expense")
+    created = create_transaction(
+        seeded_client, headers, category_id, is_recurring=True, recurring_frequency="monthly"
+    ).json()
+
+    response = seeded_client.put(
+        f"/transactions/{created['id']}",
+        json={"is_recurring": False},
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
 def test_delete_transaction(seeded_client):
     headers = register_and_login(seeded_client)
     category_id = get_category_id(seeded_client, headers, "expense")

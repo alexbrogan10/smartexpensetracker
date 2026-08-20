@@ -86,6 +86,40 @@ def test_update_and_delete_custom_category(seeded_client):
     assert delete_response.status_code == 204
 
 
+def test_update_category_icon_and_color(seeded_client):
+    headers = register_and_login(seeded_client)
+    created = seeded_client.post(
+        "/categories", json={"name": "Side Hustle", "type": "income"}, headers=headers
+    ).json()
+
+    response = seeded_client.put(
+        f"/categories/{created['id']}",
+        json={"icon": "Work", "color": "#123456"},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["icon"] == "Work"
+    assert body["color"] == "#123456"
+
+
+def test_rename_category_conflicts_with_existing_name(seeded_client):
+    headers = register_and_login(seeded_client)
+    seeded_client.post(
+        "/categories", json={"name": "Consulting", "type": "income"}, headers=headers
+    )
+    other = seeded_client.post(
+        "/categories", json={"name": "Side Hustle", "type": "income"}, headers=headers
+    ).json()
+
+    response = seeded_client.put(
+        f"/categories/{other['id']}", json={"name": "Consulting"}, headers=headers
+    )
+
+    assert response.status_code == 409
+
+
 def test_category_not_visible_to_other_user(seeded_client):
     owner_headers = register_and_login(seeded_client, email="owner@example.com")
     other_headers = register_and_login(seeded_client, email="other@example.com")

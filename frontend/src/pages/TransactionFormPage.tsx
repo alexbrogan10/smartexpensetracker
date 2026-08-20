@@ -21,6 +21,7 @@ import * as categoriesApi from '../api/categories'
 import * as categorizationApi from '../api/categorization'
 import * as transactionsApi from '../api/transactions'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { useToast } from '../hooks/useToast'
 import type { Category, CategoryType } from '../types/category'
 import type { CategorySuggestion } from '../types/categorization'
 import type { PaymentMethod, RecurringFrequency } from '../types/transaction'
@@ -45,6 +46,7 @@ export default function TransactionFormPage() {
   const { id } = useParams()
   const isEditing = Boolean(id)
   const navigate = useNavigate()
+  const { showSuccess } = useToast()
 
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoadingTransaction, setIsLoadingTransaction] = useState(isEditing)
@@ -147,6 +149,7 @@ export default function TransactionFormPage() {
       } else {
         await transactionsApi.createTransaction(payload)
       }
+      showSuccess(isEditing ? 'Transaction updated.' : 'Transaction added.')
       navigate('/transactions')
     } catch {
       setSubmitError('Could not save this transaction. Please check the fields and try again.')

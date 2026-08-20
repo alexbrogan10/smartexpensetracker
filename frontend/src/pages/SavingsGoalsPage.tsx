@@ -17,10 +17,12 @@ import EditIcon from '@mui/icons-material/Edit'
 import * as savingsGoalsApi from '../api/savingsGoals'
 import ConfirmDialog from '../components/ConfirmDialog'
 import SavingsGoalFormDialog from '../components/SavingsGoalFormDialog'
+import { useToast } from '../hooks/useToast'
 import type { SavingsGoal, SavingsGoalInput } from '../types/savingsGoal'
 import { formatCurrency, formatDate } from '../utils/format'
 
 export default function SavingsGoalsPage() {
+  const { showSuccess, showError } = useToast()
   const [goals, setGoals] = useState<SavingsGoal[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,8 +60,10 @@ export default function SavingsGoalsPage() {
   const handleFormSubmit = async (data: SavingsGoalInput) => {
     if (editingGoal) {
       await savingsGoalsApi.updateSavingsGoal(editingGoal.id, data)
+      showSuccess('Savings goal updated.')
     } else {
       await savingsGoalsApi.createSavingsGoal(data)
+      showSuccess('Savings goal created.')
     }
     setIsFormOpen(false)
     load()
@@ -72,8 +76,9 @@ export default function SavingsGoalsPage() {
       await savingsGoalsApi.deleteSavingsGoal(pendingDeleteId)
       setPendingDeleteId(null)
       load()
+      showSuccess('Savings goal deleted.')
     } catch {
-      setError('Could not delete this goal. Please try again.')
+      showError('Could not delete this goal. Please try again.')
     } finally {
       setIsDeleting(false)
     }

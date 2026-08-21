@@ -1,6 +1,6 @@
 # Database Design
 
-PostgreSQL 16, accessed through SQLAlchemy 2.0 (typed `Mapped[...]` models) with Alembic migrations. This document covers the schema as of Milestone 2.
+PostgreSQL 16, accessed through SQLAlchemy 2.0 (typed `Mapped[...]` models) with Alembic migrations. This document reflects the final schema; the "Design Decisions" section below notes where the schema evolved from the original Milestone 2 plan as later milestones landed.
 
 ## Entity-Relationship Diagram
 
@@ -10,9 +10,12 @@ erDiagram
     USERS ||--o{ TRANSACTIONS : "owns"
     USERS ||--o{ BUDGETS : "owns"
     USERS ||--o{ SAVINGS_GOALS : "owns"
+    USERS ||--o{ TRANSACTION_IMPORTS : "owns"
+    USERS ||--o{ NOTIFICATIONS : "owns"
     CATEGORIES ||--o{ TRANSACTIONS : "classifies"
     CATEGORIES ||--o{ BUDGET_CATEGORIES : "limited by"
     BUDGETS ||--o{ BUDGET_CATEGORIES : "has"
+    TRANSACTIONS |o--o{ NOTIFICATIONS : "flagged by (nullable)"
 
     USERS {
         uuid id PK
@@ -82,6 +85,32 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
+
+    TRANSACTION_IMPORTS {
+        uuid id PK
+        uuid user_id FK
+        string filename
+        enum status "pending | confirmed | cancelled"
+        int total_rows
+        int valid_rows
+        int error_rows
+        int duplicate_rows
+        json rows "full parsed/validated preview"
+        datetime created_at
+        datetime updated_at
+    }
+
+    NOTIFICATIONS {
+        uuid id PK
+        uuid user_id FK
+        uuid related_transaction_id FK "nullable, ON DELETE SET NULL"
+        enum type "unusual_spending"
+        string title
+        text message
+        bool is_read
+        datetime created_at
+        datetime updated_at
+    }
 ```
 
 ## Design Decisions
@@ -106,9 +135,9 @@ All monetary amounts use `Numeric(12, 2)` (fixed-point decimal), never `Float`. 
 
 The sign of a transaction is carried by `type` (`income`/`expense`), not by the amount itself — enforced with `CHECK (amount > 0)`. This avoids the classic bug class where a transaction's direction depends on remembering to negate a number somewhere in application code; cash-flow math instead branches explicitly on `type`.
 
-### Recurring metadata lives on the transaction row (for now)
+### Recurring metadata lives on the transaction row, permanently
 
-`is_recurring` and `recurring_frequency` are columns on `transactions` rather than a separate `recurring_transaction_rules` table, enforced together by a `CHECK` constraint (`is_recurring = true` requires a non-null `recurring_frequency`, and vice versa). This is sufficient through the transaction, budget, and dashboard milestones. A dedicated rules table becomes worthwhile once we build "upcoming recurring transaction" projection and notifications (Milestone 10), where we need to track a rule's *next due date* independently of the historical instances already recorded — that table will be introduced there rather than speculatively now.
+`is_recurring` and `recurring_frequency` are columns on `transactions` rather than a separate `recurring_transaction_rules` table, enforced together by a `CHECK` constraint (`is_recurring = true` requires a non-null `recurring_frequency`, and vice versa). This turned out to be sufficient for the whole project, not just "for now" as originally planned here: the Dashboard's "upcoming recurring" widget (Milestone 6) computes each series' next due date on the fly from its most recent transaction (`compute_next_due_date`, grouped by payee), and Milestone 10 deliberately scoped notifications to unusual-spending flags only, explicitly leaving recurring-payment reminders out because they'd need scheduler/cron infrastructure this stack doesn't have. No feature ever needed to track a rule's next-due-date independently of the transaction history, so the dedicated table this section originally predicted was never built.
 
 ### Categories: system defaults + user-owned custom categories, one table
 
@@ -118,9 +147,14 @@ The sign of a transaction is carried by `type` (`income`/`expense`), not by the 
 
 `budgets` holds one row per user per calendar month (`UNIQUE(user_id, month, year)`) with an optional `overall_amount`. Category-level limits live in a separate `budget_categories` join table (`budget_id`, `category_id`, `amount`) rather than as columns on `budgets`, since the set of budgeted categories is user-defined and variable — a fixed column per category would not scale and would waste space for users who only budget a few categories.
 
-### Tables deliberately not created yet
+### Tables added incrementally, not speculatively
 
-`transaction_imports`, `category_predictions`, and `notifications` are part of the eventual design but are **not** created in this migration. Each is only meaningful once its owning feature exists (CSV import in Milestone 7, AI categorization audit trail in Milestone 8, in-app notifications in Milestone 10), and creating them now would mean empty, unused tables — the schema is expected to grow incrementally, migration by migration, alongside the features that need it.
+This migration deliberately did not create `transaction_imports` or `notifications` — each was only meaningful once its owning feature existed, and creating them early would have meant empty, unused tables. They were added in the migrations for the milestones that actually needed them:
+
+- **`transaction_imports`** (Milestone 7): one row per CSV upload. `rows` stores the full parsed/validated preview as JSON rather than a relational staging table, since it's transient data — read once at confirm/cancel time and never queried by anything else. Once confirmed, the valid rows become real `transactions`; the import row itself just remains as a record of the batch.
+- **`notifications`** (Milestone 10): unlike the on-demand budget/trend/savings insights in the recommendations feature (computed fresh on every request, never stored), an unusual-spending flag is a point-in-time event tied to one transaction that a user reviews and dismisses over time, so it needed its own persisted, `is_read`-tracked row.
+
+One table from the original plan never got built at all: a `category_predictions` audit table, intended in this document's original draft to log AI categorization suggestions. Milestone 8 took a simpler path instead — the categorization model trains from scratch on each request directly from existing `transactions` rows (no separate training-data table needed) and returns a suggestion the user can accept or ignore inline; nothing about that flow needed to be persisted, so the table was dropped from the design rather than built and left unused.
 
 ### Referential integrity
 
@@ -145,3 +179,4 @@ Model and constraint tests (`tests/test_models.py`) run against an in-memory SQL
 - No soft-delete: deletions are hard deletes (constrained by the FK behavior above). Acceptable for a portfolio project; a real product might add `deleted_at` to `transactions` for recoverability.
 - No multi-currency support — all amounts are assumed to be a single implicit currency.
 - `budgets` are calendar-month only; no support for custom budget periods (e.g. a 4-week cycle).
+- No recurring-payment due-date reminders (only the unusual-spending notification type exists) — this would need a scheduler/cron this stack doesn't have, and was deliberately deferred rather than built as a one-off (see Milestone 10 in `docs/architecture.md`).

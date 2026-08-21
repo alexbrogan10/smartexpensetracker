@@ -2,16 +2,42 @@
 
 [![CI](https://github.com/alexbrogan10/smartexpensetracker/actions/workflows/ci.yml/badge.svg)](https://github.com/alexbrogan10/smartexpensetracker/actions/workflows/ci.yml)
 
-A full-stack personal finance application for tracking income and expenses, managing budgets and savings goals, and surfacing AI-powered spending insights — built as a production-quality portfolio project.
+A full-stack personal finance application for tracking income and expenses, managing budgets and savings goals, and surfacing AI-powered spending insights — built as a production-quality portfolio project, end to end: FastAPI + PostgreSQL backend, React + TypeScript frontend, real machine learning (not just the phrase), Docker Compose, and CI.
 
-> **Status:** Milestone 13 of 14 complete (Docker, Docker Compose, and CI). Full setup narrative, screenshots, and feature documentation land in the final documentation milestone — see [`docs/`](./docs) for architecture notes as they're added.
+Built incrementally across 14 milestones, each one implemented, tested against a real Postgres + browser stack, and committed before the next began. See [`docs/architecture.md`](./docs/architecture.md) for how the pieces fit together and [`docs/database.md`](./docs/database.md) for the schema and its design decisions — both explain not just what was built but why, including the couple of places where an original plan changed once a later milestone landed.
+
+## Screenshots
+
+| Dashboard | Transactions |
+|---|---|
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![Transactions](./docs/screenshots/transactions.png) |
+
+| Insights (forecast + recommendations) | Notifications |
+|---|---|
+| ![Insights](./docs/screenshots/insights.png) | ![Notifications](./docs/screenshots/notifications.png) |
+
+## Features
+
+- **Accounts & auth** — JWT-based registration/login, profile and password management.
+- **Transactions** — income/expense tracking with categories, payment methods, recurring flags, search, filtering, sorting, and pagination.
+- **Budgets** — an overall monthly limit plus optional per-category limits, with progress and status (ok/warning/exceeded).
+- **Savings goals** — target amount and optional target date, with on-track/behind-pace status computed from elapsed time vs. progress.
+- **Dashboard & analytics** — month-over-month summary, category breakdown, income/expense trends, top merchants, upcoming recurring transactions.
+- **CSV import & export** — upload a CSV, preview validated/flagged rows before committing, export filtered transactions back out as CSV or Excel.
+- **AI category suggestions** — a small text classifier (scikit-learn), trained per-user from that user's own transaction history, suggests a category as you type a new transaction's payee.
+- **Spending forecasts** — a linear regression over trailing monthly totals predicts next month's income/expenses and top trending categories.
+- **Smart recommendations** — rule-based (not ML) budget-pace, category-trend, and savings-goal-pace warnings, computed fresh from current data.
+- **Unusual spending detection** — a statistical outlier test (Tukey's IQR fences) flags transactions that are unusually large for their category, surfaced as persisted, dismissible notifications.
+- **Responsive UI** — a collapsible mobile nav, toast feedback on every action, route-level code splitting.
+
+`docs/architecture.md` explains why the three "AI" features above (categorization, forecasting, anomaly detection) each use a genuinely different technique rather than reaching for a model everywhere — and why recommendations, despite the name, aren't ML at all.
 
 ## Tech Stack
 
 **Backend:** Python 3.13, FastAPI, SQLAlchemy, Alembic, PostgreSQL, Pydantic, Pandas, Scikit-learn, Uvicorn
 **Frontend:** React, TypeScript, Vite, Material UI, React Router, Axios, Recharts
 **Auth:** JWT, bcrypt
-**Testing:** pytest, React Testing Library
+**Testing:** pytest, React Testing Library / Vitest
 **DevOps:** Docker, Docker Compose, GitHub Actions
 
 ## Project Structure
@@ -20,9 +46,8 @@ A full-stack personal finance application for tracking income and expenses, mana
 smart-expense-tracker/
 ├── backend/       # FastAPI application (app/, tests/, alembic/)
 ├── frontend/      # React + TypeScript SPA (Vite)
-├── docs/          # Architecture, database, API, and deployment docs
-├── scripts/       # Dev/ops helper scripts
-├── sample_data/   # Fictional seed data for local demos
+├── docs/          # Architecture, database design, and screenshots
+├── sample_data/   # Fictional CSVs for exercising the import feature
 └── docker-compose.yml
 ```
 
@@ -49,7 +74,7 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`, with a health check at `GET /health`.
+The API will be available at `http://localhost:8000`. Interactive API docs (Swagger UI) are auto-generated at `http://localhost:8000/docs`, with a health check at `GET /health`.
 
 ### Frontend
 
@@ -80,6 +105,17 @@ localhost), set `VITE_API_BASE_URL` in `.env` before building — Vite inlines
 it into the built JS at image-build time, so it can't be changed later at
 container-run time without rebuilding the image.
 
+### Trying it out with sample data
+
+After registering an account, the fastest way to see the app with real-looking
+data is the CSV import feature: go to **Transactions → Import CSV** and upload
+[`sample_data/sample_transactions.csv`](./sample_data/sample_transactions.csv)
+(51 realistic rows across income and expense categories, some recurring). A
+second file, [`sample_transactions_with_errors.csv`](./sample_data/sample_transactions_with_errors.csv),
+demonstrates the import validation flow — it's deliberately full of bad rows
+(missing fields, invalid dates/amounts, an unknown category, a duplicate pair)
+so you can see each one flagged individually in the preview.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` at the project root and adjust as needed. See that file for the full list of variables (database connection, JWT secret, CORS origins, frontend API base URL).
@@ -107,10 +143,15 @@ PostgreSQL service container, then pytest with coverage), a frontend job
 (eslint, prettier, `tsc -b`, vitest, `vite build`), and a job that builds both
 Docker images to catch any Dockerfile regressions.
 
-## Roadmap
+## Documentation
 
-This project is being built incrementally across 14 milestones — project setup, database design, authentication, transaction/budget management, dashboard & analytics, CSV import, AI categorization, forecasting, anomaly detection, and finally testing, Docker/CI, and documentation polish. Progress and architectural decisions are tracked in [`docs/`](./docs) as each milestone lands.
+- [`docs/architecture.md`](./docs/architecture.md) — backend layering, frontend structure, auth model, and how the AI/statistics/rules-based features differ.
+- [`docs/database.md`](./docs/database.md) — the full schema (ERD) and the reasoning behind each modeling decision, including where the design changed as later milestones landed.
+
+## Known limitations
+
+Documented in detail in `docs/database.md` and `docs/architecture.md`; the notable ones: no soft-delete (deletions are hard deletes), single implicit currency, calendar-month-only budgets, and no recurring-payment due-date reminders (would need scheduler/cron infrastructure this stack doesn't have — the Dashboard's "upcoming recurring" widget covers that ground with a computed projection instead).
 
 ## License
 
-TBD.
+[MIT](./LICENSE)
